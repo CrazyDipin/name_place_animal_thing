@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class JoinExistingGame extends StatefulWidget {
   const JoinExistingGame({Key? key}) : super(key: key);
@@ -8,63 +11,89 @@ class JoinExistingGame extends StatefulWidget {
 
 class JoinExistingGameState extends State<JoinExistingGame> {
   @override
+  final TextEditingController _controller = TextEditingController();
+  Future<Album>? _futureAlbum;
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-          child: Column(mainAxisAlignment: MainAxisAlignment.center,
+          child: Column(//mainAxisAlignment: MainAxisAlignment.center,
               //crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-            /*LabelBox(text: 'Your Name:'),
+        /*LabelBox(text: 'Your Name:'),
             const Padding(padding: EdgeInsets.fromLTRB(0, 50, 0, 50)),
             LabelBox(text: 'Room Code:'),
             */
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
-              const Text('Your Name:'),
-              const Padding(padding: EdgeInsets.fromLTRB(5, 0, 0, 5)),
-              Container(
-                width: 122,
-                height: 49.2,
-                child: const Expanded(
-                  child: TextField(
-                      decoration: InputDecoration(
+        const Padding(padding: EdgeInsets.fromLTRB(0, 50, 0, 50)),
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
+          const Text('Your Name:'),
+          const Padding(padding: EdgeInsets.fromLTRB(5, 0, 0, 5)),
+          Container(
+            width: 122,
+            height: 49.2,
+            child: Expanded(
+              child: TextField(
+                  controller: _controller,
+                  decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     //labelText: "enter name",
                   )),
-                ),
-              ),
-            ]),
-            const Padding(padding: EdgeInsets.fromLTRB(0, 12, 0, 12)),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
-              const Text('Room Code:'),
-              const Padding(padding: EdgeInsets.fromLTRB(5, 0, 0, 5)),
-              Container(
-                width: 122,
-                height: 49.2,
-                child: const Expanded(
-                  child: TextField(
-                      decoration: InputDecoration(
-                    border: OutlineInputBorder(),
-                    //labelText: "enter room code",
-                  )),
-                ),
-              ),
-            ]),
-            const Padding(padding: EdgeInsets.fromLTRB(0, 12, 0, 12)),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              CustomButton(
-                  text: 'Join Your Friends!',
-                  action: () {
-                    Navigator.of(context).pop();
-                  }),
-              const Padding(padding: EdgeInsets.fromLTRB(5, 0, 5, 0)),
-              CustomButton(
-                  text: 'Cancel',
-                  action: () {
-                    Navigator.of(context).pop();
-                  })
-            ])
-          ])),
+            ),
+          ),
+        ]),
+        const Padding(padding: EdgeInsets.fromLTRB(0, 12, 0, 12)),
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
+          const Text('Room Code:'),
+          const Padding(padding: EdgeInsets.fromLTRB(5, 0, 0, 5)),
+          Container(
+            width: 122,
+            height: 49.2,
+            child: const Expanded(
+              child: TextField(
+                  decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                //labelText: "enter room code",
+              )),
+            ),
+          ),
+        ]),
+        const Padding(padding: EdgeInsets.fromLTRB(0, 12, 0, 12)),
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          CustomButton(
+              text: 'Join Your Friends!',
+              action: () {
+                setState(() {
+                  _futureAlbum = createAlbum(_controller.text);
+                });
+              }),
+          const Padding(padding: EdgeInsets.fromLTRB(5, 0, 5, 0)),
+          CustomButton(
+              text: 'Cancel',
+              action: () {
+                Navigator.of(context).pop();
+              })
+        ])
+        /*,
+        Container(
+          alignment: Alignment.center,
+          padding: const EdgeInsets.all(8.0),
+          child: buildFutureBuilder(),
+        )
+        */
+      ])),
     );
+  }
+
+  FutureBuilder<Album> buildFutureBuilder() {
+    return FutureBuilder<Album>(
+        future: _futureAlbum,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return Text(snapshot.data!.title);
+          } else if (snapshot.hasError) {
+            return Text('${snapshot.error}');
+          }
+          return const CircularProgressIndicator();
+        });
   }
 }
 
@@ -102,6 +131,38 @@ class CustomButton extends StatelessWidget {
         padding: MaterialStateProperty.all(const EdgeInsets.all(10)),
         fixedSize: MaterialStateProperty.all(const Size(220, 66)),
       ),
+    );
+  }
+}
+
+Future<Album> createAlbum(String title) async {
+  final response = await http.post(
+    Uri.parse('http://127.0.0.1:4000'),
+    headers: <String, String>{
+      'Content-Type': 'application/json; charset=UTF-8',
+    },
+    body: jsonEncode(<String, String>{
+      'title': title,
+    }),
+  );
+
+  if (response.statusCode == 201) {
+    return Album.fromJson(jsonDecode(response.body));
+  } else {
+    throw Exception('Failed to create album');
+  }
+}
+
+class Album {
+  final int id;
+  final String title;
+
+  const Album({required this.id, required this.title});
+
+  factory Album.fromJson(Map<String, dynamic> json) {
+    return Album(
+      id: json['id'],
+      title: json['title'],
     );
   }
 }

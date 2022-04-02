@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
 import 'package:name_place_animal_thing/join_existing_game.dart';
 
 void main() {
