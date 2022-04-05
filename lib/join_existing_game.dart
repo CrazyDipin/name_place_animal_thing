@@ -11,7 +11,8 @@ class JoinExistingGame extends StatefulWidget {
 
 class JoinExistingGameState extends State<JoinExistingGame> {
   @override
-  final TextEditingController _controller = TextEditingController();
+  final TextEditingController _controller1 = TextEditingController();
+  final TextEditingController _controller2 = TextEditingController();
   Future<Album>? _futureAlbum;
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,14 +31,12 @@ class JoinExistingGameState extends State<JoinExistingGame> {
           Container(
             width: 122,
             height: 49.2,
-            child: Expanded(
-              child: TextField(
-                  controller: _controller,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    //labelText: "enter name",
-                  )),
-            ),
+            child: TextField(
+                controller: _controller1,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  //labelText: "enter name",
+                )),
           ),
         ]),
         const Padding(padding: EdgeInsets.fromLTRB(0, 12, 0, 12)),
@@ -47,13 +46,12 @@ class JoinExistingGameState extends State<JoinExistingGame> {
           Container(
             width: 122,
             height: 49.2,
-            child: const Expanded(
-              child: TextField(
-                  decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                //labelText: "enter room code",
-              )),
-            ),
+            child: TextField(
+                controller: _controller2,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  //labelText: "enter room code",
+                )),
           ),
         ]),
         const Padding(padding: EdgeInsets.fromLTRB(0, 12, 0, 12)),
@@ -62,7 +60,11 @@ class JoinExistingGameState extends State<JoinExistingGame> {
               text: 'Join Your Friends!',
               action: () {
                 setState(() {
-                  _futureAlbum = createAlbum(_controller.text);
+                  Map data = {
+                    'Name': _controller1.text,
+                    'RoomCode': _controller2.text,
+                  };
+                  _futureAlbum = createAlbum(data);
                 });
               }),
           const Padding(padding: EdgeInsets.fromLTRB(5, 0, 5, 0)),
@@ -82,7 +84,7 @@ class JoinExistingGameState extends State<JoinExistingGame> {
       ])),
     );
   }
-
+  /*
   FutureBuilder<Album> buildFutureBuilder() {
     return FutureBuilder<Album>(
         future: _futureAlbum,
@@ -95,6 +97,7 @@ class JoinExistingGameState extends State<JoinExistingGame> {
           return const CircularProgressIndicator();
         });
   }
+  */
 }
 
 /*
@@ -135,18 +138,16 @@ class CustomButton extends StatelessWidget {
   }
 }
 
-Future<Album> createAlbum(String title) async {
-  final response = await http.post(
-    Uri.parse('http://127.0.0.1:4000'),
-    headers: <String, String>{
-      'Content-Type': 'application/json; charset=UTF-8',
-    },
-    body: jsonEncode(<String, String>{
-      'title': title,
-    }),
-  );
+Future<Album> createAlbum(Map data) async {
+  String body = json.encode(data);
 
-  if (response.statusCode == 201) {
+  http.Response response =
+      await http.post(Uri.parse('http://127.0.0.1:4000/name'),
+          headers: {
+            'content-type': 'application/json',
+          },
+          body: body);
+  if (response.statusCode == 200) {
     return Album.fromJson(jsonDecode(response.body));
   } else {
     throw Exception('Failed to create album');
